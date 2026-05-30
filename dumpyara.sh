@@ -302,8 +302,7 @@ fi
 
 # Generate 'all_files.txt'
 LOGI "Generating 'all_files.txt'..."
-find . -type f ! -name all_files.txt \
-     -printf '%P\n' | sort | grep -v ".git/" > ./all_files.txt
+find . -type f ! -name all_files.txt | sed 's|^\./||' | sort | grep -v ".git/" > ./all_files.txt
 
 # 'flavor' property (e.g. caiman-user)
 flavor=$(rg -m1 -INoP --no-messages "(?<=^ro.build.flavor=).*" {vendor,system,system/system}/build.prop)
@@ -469,7 +468,7 @@ LOGI "Generating dummy device tree..."
 uvx aospdtgen . --output "${WORKING}/aosp-device-tree" >> /dev/null 2>&1 || \
     LOGE "Failed to generate AOSP device tree" && rm -rf "${WORKING}/aosp-device-tree"
 
-is_ab=$(grep -oP "(?<=^ro.build.ab_update=).*" -hs {system,system/system,vendor}/build*.prop | head -1)
+is_ab=$(rg -m1 -INoP --no-messages "(?<=^ro.build.ab_update=).*" {system,system/system,vendor}/build*.prop | head -1)
 [[ -z "${is_ab}" ]] && is_ab="false"
 branch=$(echo "$description" | tr ' ' '-')
 repo=$(echo "$brand"_"$codename"_dump | tr '[:upper:]' '[:lower:]' | tr -d '\r\n')
@@ -493,7 +492,7 @@ if [[ -n $GIT_OAUTH_TOKEN ]]; then
     curl -s -X PUT -H "Authorization: token ${GIT_OAUTH_TOKEN}" -H "Accept: application/vnd.github.mercy-preview+json" -d '{ "names": ["'"$manufacturer"'","'"$platform"'","'"$top_codename"'"]}' "https://api.github.com/repos/${ORG}/${repo}/topics"
     git remote add origin https://github.com/$ORG/"${repo,,}".git
     git checkout -b "$branch"
-    find . -size +97M -printf '%P\n' -o -name "*sensetime*" -printf '%P\n' -o -name "*.lic" -printf '%P\n' >| .gitignore
+    find . \( -size +97M -o -name "*sensetime*" -o -name "*.lic" \) | sed 's|^\./||' >| .gitignore
     git add --all
     git commit -asm "Add ${description}"
     git update-ref -d HEAD

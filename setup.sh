@@ -36,8 +36,21 @@ else
     sudo_cmd="su_cmd"
 fi
 
+# 'brew' (macOS)
+if [[ "$(uname)" == "Darwin" ]]; then
+    if ! command -v brew > /dev/null 2>&1; then
+        LOGF "'brew' not found. Install Homebrew first: https://brew.sh"
+    fi
+
+    # Install required packages in form of a 'for' loop
+    for package in p7zip aria2 detox wget cpio lz4 brotli dtc ripgrep xz curl python3; do
+        LOGI "Installing '${package}'..."
+        if ! brew install "${package}" > /dev/null 2>&1; then
+            LOGE "Failed installing '${package}'."
+        fi
+    done
 # 'apt' (Debian)
-if command -v apt > /dev/null 2>&1; then
+elif command -v apt > /dev/null 2>&1; then
     # Perform repositories updates to prevent dead mirrors
     LOGI "Updating repositories..."
     $sudo_cmd apt update > /dev/null 2>&1
